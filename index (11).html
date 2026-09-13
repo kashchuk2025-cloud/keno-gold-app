@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050606">
+  <meta name="color-scheme" content="dark">
+  <title>Keno / 80 — Gold System</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --void: #050606;
+      --onyx: #0b0e0f;
+      --glass: rgba(12, 16, 17, .82);
+      --glass-hi: rgba(28, 34, 35, .8);
+      --gold-deep: #704307;
+      --gold-dark: #a56d16;
+      --gold: #e6b95b;
+      --gold-light: #ffe3a4;
+      --cream: #fff4dd;
+      --muted: #ada28e;
+      --line: rgba(229, 184, 85, .40);
+      --safe-top: max(22px, env(safe-area-inset-top));
+      --safe-bottom: max(22px, env(safe-area-inset-bottom));
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { background: var(--void); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse 92% 44% at 50% -5%, rgba(206, 151, 43, .18), transparent 52%),
+        radial-gradient(ellipse 70% 36% at 104% 39%, rgba(113, 68, 9, .16), transparent 58%),
+        radial-gradient(ellipse 80% 45% at -15% 91%, rgba(143, 94, 17, .13), transparent 62%),
+        linear-gradient(155deg, #101517 0%, #050606 38%, #080a0a 100%);
+      color: var(--cream);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: .01em;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      inset: 0;
+    }
+    body::before {
+      opacity: .30;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0 1px, transparent 1px 5px),
+        linear-gradient(118deg, transparent 15%, rgba(255,245,214,.045) 28%, transparent 41%);
+      mix-blend-mode: screen;
+    }
+    body::after {
+      background: radial-gradient(ellipse at center, transparent 37%, rgba(0,0,0,.62) 100%);
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 620px);
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: var(--safe-top) 18px var(--safe-bottom);
+    }
+
+    .frame {
+      position: relative;
+      overflow: hidden;
+      min-height: calc(100dvh - var(--safe-top) - var(--safe-bottom));
+      padding: 22px 17px 20px;
+      border: 1px solid rgba(243, 199, 98, .58);
+      border-radius: 28px;
+      background:
+        linear-gradient(132deg, rgba(255,238,191,.08) 0 15%, transparent 15% 61%, rgba(255,236,179,.035) 61% 100%),
+        linear-gradient(155deg, rgba(23,29,30,.88), rgba(4,6,6,.94) 48%, rgba(15,18,17,.88));
+      box-shadow:
+        0 0 0 1px rgba(46,29,5,.9) inset,
+        0 18px 70px rgba(0,0,0,.46),
+        0 0 42px rgba(174,117,25,.10);
+    }
+
+    .frame::before {
+      content: "";
+      position: absolute;
+      inset: -80px -120px auto auto;
+      width: 430px;
+      height: 330px;
+      transform: rotate(19deg);
+      background: radial-gradient(ellipse, rgba(250,206,117,.17), transparent 62%);
+      filter: blur(7px);
+      animation: drift 9s ease-in-out infinite alternate;
+    }
+    .frame::after {
+      content: "";
+      position: absolute;
+      width: 130%;
+      height: 1px;
+      left: -15%;
+      bottom: 54px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: .55;
+    }
+
+    .topbar,
+    .hero,
+    .section,
+    .legal,
+    .toast { position: relative; z-index: 1; }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 17px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand-kicker {
+      margin: 0 0 5px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .18em;
+    }
+    .brand {
+      margin: 0;
+      color: var(--cream);
+      font-size: clamp(27px, 8vw, 38px);
+      line-height: .95;
+      font-weight: 800;
+      letter-spacing: -.045em;
+    }
+    .brand span { color: var(--gold-light); }
+    .signal { display: flex; gap: 6px; padding-top: 7px; }
+    .signal i {
+      display: block;
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--gold-light);
+      box-shadow: 0 0 9px var(--gold);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    .signal i:nth-child(2) { animation-delay: .15s; }
+    .signal i:nth-child(3) { animation-delay: .3s; }
+    .signal i:nth-child(4) { animation-delay: .45s; }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 21px 0 16px;
+    }
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .15em;
+    }
+    .hero h2 {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.1;
+      letter-spacing: -.025em;
+    }
+    .hero p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .orb {
+      display: grid;
+      flex: 0 0 auto;
+      place-items: center;
+      width: 59px;
+      height: 59px;
+      border: 1px solid rgba(255,221,149,.84);
+      border-radius: 50%;
+      color: var(--gold-light);
+      font-size: 22px;
+      font-weight: 800;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255,235,188,.42), transparent 16%),
+        radial-gradient(circle at 50% 50%, rgba(198,139,26,.22), transparent 56%),
+        #090b0c;
+      box-shadow: inset 0 0 0 5px rgba(228,175,73,.06), 0 0 22px rgba(226,170,61,.19);
+    }
+
+    .gold-line {
+      height: 1px;
+      margin: 0 0 15px;
+      background: linear-gradient(90deg, transparent, rgba(255,227,156,.84), transparent);
+    }
+
+    .action-stack { display: grid; gap: 10px; }
+    .action {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      width: 100%;
+      min-height: 61px;
+      overflow: hidden;
+      padding: 8px 15px 8px 10px;
+      border: 1px solid rgba(236,183,72,.85);
+      border-radius: 16px;
+      color: var(--cream);
+      text-align: left;
+      cursor: pointer;
+      background:
+        linear-gradient(90deg, rgba(232,180,77,.23), rgba(11,14,15,.96) 13%, rgba(13,16,17,.93) 84%, rgba(232,180,77,.10)),
+        #0a0d0e;
+      box-shadow: inset 0 0 0 2px rgba(6,8,8,.92), 0 5px 14px rgba(0,0,0,.23);
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .action::before {
+      content: "";
+      position: absolute;
+      top: -45%;
+      left: -38%;
+      width: 25%;
+      height: 190%;
+      transform: skewX(-18deg);
+      background: linear-gradient(90deg, transparent, rgba(255,245,211,.46), transparent);
+      opacity: .7;
+      animation: sheen 5s ease-in-out infinite;
+    }
+    .action::after {
+      content: "";
+      position: absolute;
+      top: 12px;
+      bottom: 12px;
+      left: 7px;
+      width: 5px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #724205, #ffe6a6 42%, #ad7013 76%, #5f3703);
+      box-shadow: 0 0 11px rgba(244,189,76,.5);
+    }
+    .action:hover,
+    .action:focus-visible {
+      transform: translateY(-2px);
+      border-color: var(--gold-light);
+      outline: none;
+      box-shadow: inset 0 0 0 2px rgba(6,8,8,.92), 0 9px 21px rgba(0,0,0,.35), 0 0 20px rgba(231,177,63,.17);
+    }
+    .action:active { transform: scale(.985); }
+    .icon-box {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      margin-left: 4px;
+      border: 1px solid rgba(247,205,116,.73);
+      border-radius: 11px;
+      color: var(--gold-light);
+      background: rgba(7,9,9,.78);
+    }
+    .icon-box svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .action-copy { position: relative; z-index: 1; min-width: 0; }
+    .action-copy strong { display: block; font-size: 15px; letter-spacing: .03em; }
+    .action-copy small { display: block; margin-top: 3px; color: #b9ad95; font-size: 10px; letter-spacing: .04em; }
+    .arrow { position: relative; z-index: 1; margin-left: auto; color: var(--gold); font-size: 25px; font-weight: 300; }
+
+    .section {
+      margin-top: 18px;
+      padding: 16px 13px 13px;
+      border: 1px solid rgba(224,175,75,.29);
+      border-radius: 19px;
+      background: rgba(3,5,5,.50);
+      box-shadow: inset 0 1px 0 rgba(255,237,193,.045);
+    }
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .section-head h3 { margin: 0; color: var(--gold-light); font-size: 12px; letter-spacing: .10em; }
+    .section-head span { color: var(--muted); font-size: 10px; }
+    .number-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .number {
+      position: relative;
+      min-height: 43px;
+      overflow: hidden;
+      border: 1px solid rgba(234,185,83,.72);
+      border-radius: 12px;
+      color: var(--gold-light);
+      font: 800 15px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+      background:
+        linear-gradient(135deg, rgba(254,218,140,.16), rgba(9,12,12,.96) 42%, rgba(114,69,8,.21)),
+        #0a0d0e;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.8);
+      transition: transform .15s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+    }
+    .number::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(108deg, transparent 26%, rgba(255,240,193,.28) 47%, transparent 65%);
+      transform: translateX(-135%);
+      transition: transform .42s ease;
+    }
+    .number:hover,
+    .number:focus-visible,
+    .number.selected {
+      color: #191106;
+      outline: none;
+      background: linear-gradient(135deg, #8b5709, #ffe2a0 48%, #c68720 74%, #6c4005);
+      box-shadow: 0 0 18px rgba(231,176,64,.35);
+      transform: translateY(-1px);
+    }
+    .number:hover::before,
+    .number:focus-visible::before,
+    .number.selected::before { transform: translateX(135%); }
+
+    .auto {
+      position: relative;
+      width: 100%;
+      min-height: 47px;
+      margin-top: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255,225,151,.82);
+      border-radius: 13px;
+      color: #161005;
+      font: 800 12px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: .10em;
+      cursor: pointer;
+      background: linear-gradient(100deg, #754507, #d89d30 31%, #ffe4a6 51%, #d29328 71%, #754507);
+      background-size: 180% 100%;
+      box-shadow: 0 7px 20px rgba(0,0,0,.28), 0 0 20px rgba(224,163,45,.16);
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .auto:hover,
+    .auto:focus-visible { background-position: 100% 0; transform: translateY(-1px); outline: none; box-shadow: 0 10px 26px rgba(0,0,0,.35), 0 0 23px rgba(243,190,74,.27); }
+    .auto:active { transform: scale(.985); }
+
+    .legal {
+      margin: 16px 2px 8px;
+      color: #8f887a;
+      font-size: 10px;
+      line-height: 1.55;
+      text-align: center;
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 10;
+      left: 50%;
+      bottom: calc(var(--safe-bottom) + 16px);
+      width: min(calc(100% - 36px), 450px);
+      padding: 13px 15px;
+      border: 1px solid rgba(255,220,142,.62);
+      border-radius: 14px;
+      color: var(--cream);
+      font-size: 12px;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, 18px);
+      background: rgba(10,13,13,.95);
+      box-shadow: 0 12px 36px rgba(0,0,0,.5), 0 0 22px rgba(224,164,54,.16);
+      transition: opacity .22s ease, transform .22s ease;
+    }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+
+    @keyframes sheen {
+      0%, 16% { left: -38%; }
+      43%, 100% { left: 120%; }
+    }
+    @keyframes drift { from { transform: rotate(19deg) translate3d(0,0,0); } to { transform: rotate(19deg) translate3d(-32px,18px,0); } }
+    @keyframes pulse { 0%, 100% { opacity: .48; transform: scale(.82); } 48% { opacity: 1; transform: scale(1.15); } }
+
+    @media (max-width: 380px) {
+      .app { padding-inline: 10px; }
+      .frame { padding-inline: 13px; border-radius: 23px; }
+      .action-copy strong { font-size: 13px; }
+      .action-copy small { font-size: 9px; }
+      .number-grid { gap: 6px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="frame" aria-label="Игровой кабинет Keno">
+      <header class="topbar">
+        <div>
+          <p class="brand-kicker">BLACK MIRROR · GOLD SYSTEM</p>
+          <h1 class="brand">KENO <span>/ 80</span></h1>
+        </div>
+        <div class="signal" aria-label="Система активна"><i></i><i></i><i></i><i></i></div>
+      </header>
+
+      <div class="hero">
+        <div>
+          <p class="eyebrow">PERSONAL GAME CABINET</p>
+          <h2>Игровой кабинет</h2>
+          <p>Комбинации, VIP-доступ и профиль</p>
+        </div>
+        <div class="orb" aria-label="Поле из 80 чисел">80</div>
+      </div>
+
+      <div class="gold-line"></div>
+
+      <nav class="action-stack" aria-label="Разделы кабинета">
+        <button class="action" type="button" id="open-forecast">
+          <span class="icon-box" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
+          </span>
+          <span class="action-copy"><strong>СОБРАТЬ ПРОГНОЗ</strong><small>выбрать размер комбинации</small></span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </button>
+
+        <button class="action" type="button" data-action="vip_forecast">
+          <span class="icon-box" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="m12 3 8 9-8 9-8-9 8-9Z"></path><path d="M4 12h16M12 3v18"></path></svg>
+          </span>
+          <span class="action-copy"><strong>VIP ПРОГНОЗ</strong><small>горячие и холодные числа</small></span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </button>
+
+        <button class="action" type="button" data-action="profile">
+          <span class="icon-box" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M4.5 21c.8-4 3.2-6 7.5-6s6.7 2 7.5 6"></path></svg>
+          </span>
+          <span class="action-copy"><strong>МОЙ ПРОФИЛЬ</strong><small>статус доступа и срок VIP</small></span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </button>
+
+        <button class="action" type="button" id="open-vip">
+          <span class="icon-box" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="m4 7 3 11h10l3-11-5 5-3-8-3 8-5-5Z"></path><path d="M7 21h10"></path></svg>
+          </span>
+          <span class="action-copy"><strong>VIP PRO · 50 STARS</strong><small>доступ на 30 дней</small></span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </button>
+      </nav>
+
+      <section class="section" id="combination-size" aria-labelledby="size-title">
+        <div class="section-head">
+          <h3 id="size-title">РАЗМЕР КОМБИНАЦИИ</h3>
+          <span>01 — 10</span>
+        </div>
+        <div class="number-grid" role="group" aria-label="Выберите количество чисел">
+          <button class="number" type="button" data-size="1">01</button>
+          <button class="number" type="button" data-size="2">02</button>
+          <button class="number" type="button" data-size="3">03</button>
+          <button class="number" type="button" data-size="4">04</button>
+          <button class="number" type="button" data-size="5">05</button>
+          <button class="number" type="button" data-size="6">06</button>
+          <button class="number" type="button" data-size="7">07</button>
+          <button class="number" type="button" data-size="8">08</button>
+          <button class="number" type="button" data-size="9">09</button>
+          <button class="number" type="button" data-size="10">10</button>
+        </div>
+        <button class="auto" type="button" id="auto-size">✦ &nbsp; АВТОВЫБОР РАЗМЕРА</button>
+      </section>
+
+      <p class="legal">Подборки носят развлекательный характер и не гарантируют выигрыш. Доступ и лимит проверяются ботом автоматически.</p>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+      const toast = document.getElementById('toast');
+      const sizePanel = document.getElementById('combination-size');
+      let toastTimer;
+      let sending = false;
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
+      }
+
+      function haptic(type = 'light') {
+        if (!tg || !tg.HapticFeedback) return;
+        if (type === 'selection') tg.HapticFeedback.selectionChanged();
+        else tg.HapticFeedback.impactOccurred(type);
+      }
+
+      function sendToBot(action, amount = null) {
+        if (sending) return;
+        sending = true;
+        const payload = { action };
+        if (amount !== null) payload.amount = amount;
+
+        if (!tg || typeof tg.sendData !== 'function') {
+          sending = false;
+          showToast('Демо-режим: открой кабинет кнопкой из Telegram.');
+          return;
+        }
+
+        haptic(action === 'buy_vip' ? 'medium' : 'light');
+        showToast('Запрос принят. Результат появится в чате бота.');
+        window.setTimeout(() => tg.sendData(JSON.stringify(payload)), 340);
+      }
+
+      function selectSize(button) {
+        document.querySelectorAll('.number').forEach(item => item.classList.remove('selected'));
+        button.classList.add('selected');
+        haptic('selection');
+        window.setTimeout(() => sendToBot('forecast', Number(button.dataset.size)), 180);
+      }
+
+      document.getElementById('open-forecast').addEventListener('click', () => {
+        haptic('light');
+        sizePanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      document.querySelectorAll('[data-size]').forEach(button => {
+        button.addEventListener('click', () => selectSize(button));
+      });
+
+      document.getElementById('auto-size').addEventListener('click', () => sendToBot('forecast', 'auto'));
+      document.querySelectorAll('[data-action]').forEach(button => {
+        button.addEventListener('click', () => sendToBot(button.dataset.action));
+      });
+
+      document.getElementById('open-vip').addEventListener('click', () => {
+        if (tg && typeof tg.showPopup === 'function') {
+          haptic('light');
+          tg.showPopup({
+            title: 'VIP PRO',
+            message: 'VIP Pro на 30 дней за 50 Telegram Stars. Открыть счёт?',
+            buttons: [
+              { id: 'cancel', type: 'cancel', text: 'Не сейчас' },
+              { id: 'pay', type: 'default', text: 'Открыть счёт' }
+            ]
+          }, buttonId => {
+            if (buttonId === 'pay') sendToBot('buy_vip');
+          });
+        } else {
+          sendToBot('buy_vip');
+        }
+      });
+
+      if (tg) {
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#050606');
+        tg.setBackgroundColor('#050606');
+      }
+    })();
+  </script>
+</body>
+</html>
